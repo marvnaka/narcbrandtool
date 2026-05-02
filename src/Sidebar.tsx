@@ -6,6 +6,7 @@ interface SidebarProps {
   onImageUpload: (file: File) => void;
   onDetectSilhouette: () => void;
   onComplexityChange: (value: number) => void;
+  onPrismScaleChange: (value: number) => void;
   onRegeneratePolygon: () => void;
   onExport: () => void;
 }
@@ -155,6 +156,7 @@ export function Sidebar({
   onImageUpload,
   onDetectSilhouette,
   onComplexityChange,
+  onPrismScaleChange,
   onRegeneratePolygon,
   onExport,
 }: SidebarProps) {
@@ -223,8 +225,8 @@ export function Sidebar({
           <label style={s.label}>Polygon Complexity</label>
           <input
             type="range"
-            min={4}
-            max={12}
+            min={5}
+            max={13}
             step={1}
             value={state.polygonComplexity}
             style={s.slider as React.CSSProperties}
@@ -233,6 +235,23 @@ export function Sidebar({
           />
           <div style={{ ...s.value, opacity: hasPolygon ? 1 : 0.3 }}>
             {vertexCount} vertices
+          </div>
+        </div>
+
+        <div style={s.row}>
+          <label style={s.label}>Prism Scale</label>
+          <input
+            type="range"
+            min={1.5}
+            max={3.0}
+            step={0.05}
+            value={state.prismScale}
+            style={s.slider as React.CSSProperties}
+            onChange={e => onPrismScaleChange(Number(e.target.value))}
+            disabled={!hasPolygon}
+          />
+          <div style={{ ...s.value, opacity: hasPolygon ? 1 : 0.3 }}>
+            {state.prismScale.toFixed(2)}×
           </div>
         </div>
 

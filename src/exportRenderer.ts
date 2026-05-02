@@ -16,7 +16,8 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
 
 export async function exportToPng(
   imageDataUrl: string,
-  polygonPoints: Point[] | null
+  polygonPoints: Point[] | null,
+  prismScale: number
 ): Promise<void> {
   const offscreen = document.createElement('canvas');
   offscreen.width = EXPORT_WIDTH;
@@ -43,7 +44,7 @@ export async function exportToPng(
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
 
   if (polygonPoints && polygonPoints.length >= 3) {
-    const scaledPoints = scaleFromCentroid(polygonPoints, 1.5);
+    const scaledPoints = scaleFromCentroid(polygonPoints, prismScale);
     const pixelPoints = scaledPoints.map(p => ({
       x: p.x * EXPORT_WIDTH,
       y: p.y * EXPORT_HEIGHT,

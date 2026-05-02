@@ -11,10 +11,9 @@ const CANVAS_H = 1350;
 
 function complexityToEpsilon(complexity: number): number {
   // Hull coordinates are normalized 0–1, so epsilon must be in the same space.
-  // Equivalent to the spec's 80px / 15px range on a ~1080px image:
-  //   complexity 4  → epsilon 0.08  (fewest vertices, most simplified)
-  //   complexity 12 → epsilon 0.015 (most vertices, least simplified)
-  const t = (complexity - 4) / (12 - 4);
+  //   complexity 5  → epsilon 0.08  (fewest vertices, most simplified)
+  //   complexity 13 → epsilon 0.015 (most vertices, least simplified)
+  const t = (complexity - 5) / (13 - 5);
   return 0.08 - t * (0.08 - 0.015);
 }
 
@@ -25,7 +24,8 @@ const initialState: AppState = {
   rawHullPoints: null,
   polygonPoints: null,
   vertexCount: 0,
-  polygonComplexity: 8,
+  polygonComplexity: 7,
+  prismScale: 1.5,
 };
 
 export default function App() {
@@ -60,18 +60,19 @@ export default function App() {
     renderComposition(ctx, {
       imageDataUrl: state.imageDataUrl,
       polygonPoints: state.polygonPoints,
+      prismScale: state.prismScale,
       canvasWidth: CANVAS_W,
       canvasHeight: CANVAS_H,
     }).finally(() => {
       renderQueued.current = false;
     });
-  }, [state.imageDataUrl, state.polygonPoints]);
+  }, [state.imageDataUrl, state.polygonPoints, state.prismScale]);
 
   const applyComplexity = useCallback((rawHull: Point[], complexity: number, jitter = 0) => {
     const epsilon = complexityToEpsilon(complexity) + jitter;
     let simplified = simplifyPolygon(rawHull, epsilon);
-    if (simplified.length < 4) simplified = rawHull.slice(0, 4);
-    if (simplified.length > 14) simplified = simplified.slice(0, 14);
+    if (simplified.length < 5) simplified = rawHull.slice(0, 5);
+    if (simplified.length > 13) simplified = simplified.slice(0, 13);
     return simplified;
   }, []);
 
@@ -134,10 +135,14 @@ export default function App() {
     });
   }, [applyComplexity]);
 
+  const handlePrismScaleChange = useCallback((value: number) => {
+    setState(prev => ({ ...prev, prismScale: value }));
+  }, []);
+
   const handleExport = useCallback(async () => {
     if (!state.imageDataUrl) return;
     try {
-      await exportToPng(state.imageDataUrl, state.polygonPoints);
+      await exportToPng(state.imageDataUrl, state.polygonPoints, state.prismScale);
     } catch (err) {
       console.error('Export failed:', err);
       alert('Export failed: ' + (err instanceof Error ? err.message : 'Unknown error.'));
@@ -162,6 +167,7 @@ export default function App() {
         onImageUpload={handleImageUpload}
         onDetectSilhouette={handleDetectSilhouette}
         onComplexityChange={handleComplexityChange}
+        onPrismScaleChange={handlePrismScaleChange}
         onRegeneratePolygon={handleRegeneratePolygon}
         onExport={handleExport}
       />

@@ -12,5 +12,6 @@ export interface AppState {
   rawHullPoints: Point[] | null; // normalized 0–1, from MediaPipe + convex hull
   polygonPoints: Point[] | null; // simplified via RDP, normalized 0–1
   vertexCount: number;
-  polygonComplexity: number; // slider 4–12, default 8
+  polygonComplexity: number; // slider 5–13, default 7
+  prismScale: number;        // slider 1.5–3.0, default 1.5
 }

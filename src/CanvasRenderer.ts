@@ -5,6 +5,7 @@ import { generateNoiseCanvasAsync } from './filters';
 export interface RenderParams {
   imageDataUrl: string | null;
   polygonPoints: Point[] | null; // normalized 0–1
+  prismScale: number;
   canvasWidth: number;
   canvasHeight: number;
 }
@@ -33,7 +34,7 @@ export async function renderComposition(
   ctx: CanvasRenderingContext2D,
   params: RenderParams
 ): Promise<void> {
-  const { imageDataUrl, polygonPoints, canvasWidth, canvasHeight } = params;
+  const { imageDataUrl, polygonPoints, prismScale, canvasWidth, canvasHeight } = params;
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.fillStyle = '#111111';
@@ -60,7 +61,7 @@ export async function renderComposition(
   if (!polygonPoints || polygonPoints.length < 3) return;
 
   // Layer 1: Prismatic silhouette polygon
-  const scaledPoints = scaleFromCentroid(polygonPoints, 1.5);
+  const scaledPoints = scaleFromCentroid(polygonPoints, prismScale);
   const pixelPoints = scaledPoints.map(p => ({
     x: p.x * canvasWidth,
     y: p.y * canvasHeight,
