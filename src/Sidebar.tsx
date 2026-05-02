@@ -225,7 +225,7 @@ export function Sidebar({
           <label style={s.label}>Polygon Complexity</label>
           <input
             type="range"
-            min={5}
+            min={6}
             max={13}
             step={1}
             value={state.polygonComplexity}

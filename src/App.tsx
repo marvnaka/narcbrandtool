@@ -11,9 +11,9 @@ const CANVAS_H = 1350;
 
 function complexityToEpsilon(complexity: number): number {
   // Hull coordinates are normalized 0–1, so epsilon must be in the same space.
-  //   complexity 5  → epsilon 0.08  (fewest vertices, most simplified)
+  //   complexity 6  → epsilon 0.08  (fewest vertices, most simplified)
   //   complexity 13 → epsilon 0.015 (most vertices, least simplified)
-  const t = (complexity - 5) / (13 - 5);
+  const t = (complexity - 6) / (13 - 6);
   return 0.08 - t * (0.08 - 0.015);
 }
 
@@ -24,7 +24,7 @@ const initialState: AppState = {
   rawHullPoints: null,
   polygonPoints: null,
   vertexCount: 0,
-  polygonComplexity: 7,
+  polygonComplexity: 8,
   prismScale: 1.5,
 };
 
