@@ -13,5 +13,5 @@ export interface AppState {
   polygonPoints: Point[] | null; // simplified via RDP, normalized 0–1
   vertexCount: number;
   polygonComplexity: number; // slider 5–13, default 7
-  prismScale: number;        // slider 1.5–3.0, default 1.5
+  prismScale: number;        // slider 2.0–6.0, default 3.5
 }

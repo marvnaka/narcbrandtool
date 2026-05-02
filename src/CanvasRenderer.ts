@@ -1,5 +1,5 @@
 import type { Point } from './types';
-import { scaleFromCentroid } from './geometry';
+import { nonLinearScaleFromCentroid } from './geometry';
 import { generateNoiseCanvasAsync } from './filters';
 
 export interface RenderParams {
@@ -61,7 +61,7 @@ export async function renderComposition(
   if (!polygonPoints || polygonPoints.length < 3) return;
 
   // Layer 1: Prismatic silhouette polygon
-  const scaledPoints = scaleFromCentroid(polygonPoints, prismScale);
+  const scaledPoints = nonLinearScaleFromCentroid(polygonPoints, prismScale);
   const pixelPoints = scaledPoints.map(p => ({
     x: p.x * canvasWidth,
     y: p.y * canvasHeight,

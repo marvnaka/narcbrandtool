@@ -25,7 +25,7 @@ const initialState: AppState = {
   polygonPoints: null,
   vertexCount: 0,
   polygonComplexity: 7,
-  prismScale: 1.5,
+  prismScale: 3.5,
 };
 
 export default function App() {
@@ -69,10 +69,14 @@ export default function App() {
   }, [state.imageDataUrl, state.polygonPoints, state.prismScale]);
 
   const applyComplexity = useCallback((rawHull: Point[], complexity: number, jitter = 0) => {
-    const epsilon = complexityToEpsilon(complexity) + jitter;
+    let epsilon = Math.max(0.001, complexityToEpsilon(complexity) + jitter);
     let simplified = simplifyPolygon(rawHull, epsilon);
-    if (simplified.length < 5) simplified = rawHull.slice(0, 5);
-    if (simplified.length > 13) simplified = simplified.slice(0, 13);
+    // Hard cap at 8 vertices: increase epsilon 20% per iteration until satisfied
+    while (simplified.length > 8) {
+      epsilon *= 1.2;
+      simplified = simplifyPolygon(rawHull, epsilon);
+    }
+    if (simplified.length < 3) simplified = rawHull.slice(0, 3);
     return simplified;
   }, []);
 
@@ -129,7 +133,7 @@ export default function App() {
   const handleRegeneratePolygon = useCallback(() => {
     setState(prev => {
       if (!prev.rawHullPoints) return prev;
-      const jitter = (Math.random() - 0.5) * 16;
+      const jitter = (Math.random() - 0.5) * 0.02;
       const simplified = applyComplexity(prev.rawHullPoints, prev.polygonComplexity, jitter);
       return { ...prev, polygonPoints: simplified, vertexCount: simplified.length };
     });

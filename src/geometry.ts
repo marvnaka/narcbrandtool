@@ -92,3 +92,29 @@ export function scaleFromCentroid(points: Point[], factor: number): Point[] {
     y: c.y + (p.y - c.y) * factor,
   }));
 }
+
+// Non-linear expansion: outlier vertices (limb endpoints) get pushed
+// much further than body-adjacent vertices, creating spikes instead of
+// a uniform blob. Formula from the expansionFactor spec:
+//   newDist = dist * factor * pow(dist / maxDist, 0.7)
+// A vertex at maxDist gets the full factor; one at half-maxDist gets ~61% of it.
+export function nonLinearScaleFromCentroid(points: Point[], factor: number): Point[] {
+  const c = centroid(points);
+  const distances = points.map(p => {
+    const dx = p.x - c.x;
+    const dy = p.y - c.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  });
+  const maxDist = Math.max(...distances);
+  if (maxDist === 0) return points;
+
+  return points.map((p, i) => {
+    const dx = p.x - c.x;
+    const dy = p.y - c.y;
+    const dist = distances[i];
+    if (dist === 0) return p;
+    const newDist = dist * factor * Math.pow(dist / maxDist, 0.7);
+    const scale = newDist / dist;
+    return { x: c.x + dx * scale, y: c.y + dy * scale };
+  });
+}

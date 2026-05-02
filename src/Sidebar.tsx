@@ -242,9 +242,9 @@ export function Sidebar({
           <label style={s.label}>Prism Scale</label>
           <input
             type="range"
-            min={1.5}
-            max={3.0}
-            step={0.05}
+            min={2.0}
+            max={6.0}
+            step={0.1}
             value={state.prismScale}
             style={s.slider as React.CSSProperties}
             onChange={e => onPrismScaleChange(Number(e.target.value))}

@@ -1,5 +1,5 @@
 import type { Point } from './types';
-import { scaleFromCentroid } from './geometry';
+import { nonLinearScaleFromCentroid } from './geometry';
 import { generateNoiseCanvasAsync } from './filters';
 
 const EXPORT_WIDTH = 1080;
@@ -44,7 +44,7 @@ export async function exportToPng(
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
 
   if (polygonPoints && polygonPoints.length >= 3) {
-    const scaledPoints = scaleFromCentroid(polygonPoints, prismScale);
+    const scaledPoints = nonLinearScaleFromCentroid(polygonPoints, prismScale);
     const pixelPoints = scaledPoints.map(p => ({
       x: p.x * EXPORT_WIDTH,
       y: p.y * EXPORT_HEIGHT,
