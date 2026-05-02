@@ -25,7 +25,7 @@ const initialState: AppState = {
   polygonPoints: null,
   vertexCount: 0,
   polygonComplexity: 7,
-  prismScale: 3.5,
+  prismScale: 1.5,
 };
 
 export default function App() {
