@@ -10,9 +10,12 @@ const CANVAS_W = 1080;
 const CANVAS_H = 1350;
 
 function complexityToEpsilon(complexity: number): number {
-  // complexity 4 → epsilon 80, complexity 12 → epsilon 15
+  // Hull coordinates are normalized 0–1, so epsilon must be in the same space.
+  // Equivalent to the spec's 80px / 15px range on a ~1080px image:
+  //   complexity 4  → epsilon 0.08  (fewest vertices, most simplified)
+  //   complexity 12 → epsilon 0.015 (most vertices, least simplified)
   const t = (complexity - 4) / (12 - 4);
-  return 80 - t * (80 - 15);
+  return 0.08 - t * (0.08 - 0.015);
 }
 
 const initialState: AppState = {
