@@ -9,7 +9,7 @@ export interface OverlayDef {
   id: string;
   label: string;
   blendMode: GlobalCompositeOperation;
-  generate: (w: number, h: number) => HTMLCanvasElement;
+  path: string;
 }
 
 export interface AppState {
@@ -19,7 +19,7 @@ export interface AppState {
   rawHullPoints: Point[] | null;
   polygonPoints: Point[] | null;
   vertexCount: number;
-  polygonComplexity: number; // slider 6–13, default 8
-  prismScale: number;        // slider 2.0–6.0, default 1.5
-  activeOverlays: string[];  // ids of currently enabled overlays, in order
+  polygonComplexity: number;
+  prismScale: number;
+  activeOverlays: string[];
 }

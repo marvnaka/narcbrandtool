@@ -22,10 +22,13 @@ async function getNoiseCanvas(width: number, height: number): Promise<HTMLCanvas
   return cachedNoiseCanvas;
 }
 
+const imageCache = new Map<string, HTMLImageElement>();
+
 function loadImageElement(src: string): Promise<HTMLImageElement> {
+  if (imageCache.has(src)) return Promise.resolve(imageCache.get(src)!);
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
+    img.onload = () => { imageCache.set(src, img); resolve(img); };
     img.onerror = reject;
     img.src = src;
   });
@@ -60,11 +63,15 @@ export async function renderComposition(
 
   // Layer 0.5: Overlays — above photo, below prism
   for (const overlay of activeOverlays) {
-    const overlayCanvas = overlay.generate(canvasWidth, canvasHeight);
-    ctx.save();
-    ctx.globalCompositeOperation = overlay.blendMode;
-    ctx.drawImage(overlayCanvas, 0, 0);
-    ctx.restore();
+    try {
+      const overlayImg = await loadImageElement(overlay.path);
+      ctx.save();
+      ctx.globalCompositeOperation = overlay.blendMode;
+      ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
+      ctx.restore();
+    } catch {
+      // file missing, skip silently
+    }
   }
 
   if (!polygonPoints || polygonPoints.length < 3) return;

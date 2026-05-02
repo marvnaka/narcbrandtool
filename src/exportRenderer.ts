@@ -45,11 +45,15 @@ export async function exportToPng(
 
   // Layer 0.5: Overlays — above photo, below prism
   for (const overlay of activeOverlays) {
-    const overlayCanvas = overlay.generate(EXPORT_WIDTH, EXPORT_HEIGHT);
-    ctx.save();
-    ctx.globalCompositeOperation = overlay.blendMode;
-    ctx.drawImage(overlayCanvas, 0, 0);
-    ctx.restore();
+    try {
+      const overlayImg = await loadImageElement(overlay.path);
+      ctx.save();
+      ctx.globalCompositeOperation = overlay.blendMode;
+      ctx.drawImage(overlayImg, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+      ctx.restore();
+    } catch {
+      // file missing, skip
+    }
   }
 
   // Layer 1: Prismatic polygon
