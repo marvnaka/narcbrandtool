@@ -5,7 +5,7 @@ import { detectSilhouette } from './silhouette';
 import { simplifyPolygon } from './geometry';
 import { exportToPng } from './exportRenderer';
 import type { AppState, Point } from './types';
-import { OVERLAYS } from './types';
+import { OVERLAYS } from './overlays';
 
 const CANVAS_W = 1080;
 const CANVAS_H = 1350;

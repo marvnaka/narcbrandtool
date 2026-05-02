@@ -4,9 +4,9 @@ import { generateNoiseCanvasAsync } from './filters';
 
 export interface RenderParams {
   imageDataUrl: string | null;
-  polygonPoints: Point[] | null; // normalized 0–1
+  polygonPoints: Point[] | null;
   prismScale: number;
-  activeOverlays: OverlayDef[]; // ordered list of overlays to draw
+  activeOverlays: OverlayDef[];
   canvasWidth: number;
   canvasHeight: number;
 }
@@ -22,27 +22,13 @@ async function getNoiseCanvas(width: number, height: number): Promise<HTMLCanvas
   return cachedNoiseCanvas;
 }
 
-// Cache overlay images so they aren't re-fetched on every render
-const overlayImageCache = new Map<string, HTMLImageElement>();
-
-async function loadImageElement(src: string): Promise<HTMLImageElement> {
+function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
   });
-}
-
-async function loadOverlayImage(path: string): Promise<HTMLImageElement | null> {
-  if (overlayImageCache.has(path)) return overlayImageCache.get(path)!;
-  try {
-    const img = await loadImageElement(path);
-    overlayImageCache.set(path, img);
-    return img;
-  } catch {
-    return null;
-  }
 }
 
 export async function renderComposition(
@@ -74,11 +60,10 @@ export async function renderComposition(
 
   // Layer 0.5: Overlays — above photo, below prism
   for (const overlay of activeOverlays) {
-    const overlayImg = await loadOverlayImage(overlay.path);
-    if (!overlayImg) continue;
+    const overlayCanvas = overlay.generate(canvasWidth, canvasHeight);
     ctx.save();
     ctx.globalCompositeOperation = overlay.blendMode;
-    ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
+    ctx.drawImage(overlayCanvas, 0, 0);
     ctx.restore();
   }
 

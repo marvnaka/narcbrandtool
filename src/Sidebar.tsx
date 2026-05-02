@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import type { AppState } from './types';
-import { OVERLAYS } from './types';
+import { OVERLAYS } from './overlays';
 
 interface SidebarProps {
   state: AppState;
