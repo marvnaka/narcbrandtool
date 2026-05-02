@@ -35,7 +35,14 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasScale, setCanvasScale] = useState(1);
-  const renderQueued = useRef(false);
+
+  // Render loop: always renders with the latest params.
+  // If a render is in progress when new params arrive, they're queued and
+  // picked up immediately after — no dep-change is ever silently dropped.
+  const renderLoop = useRef<{
+    running: boolean;
+    pending: Parameters<typeof renderComposition>[1] | null;
+  }>({ running: false, pending: null });
 
   useEffect(() => {
     function updateScale() {
@@ -57,21 +64,31 @@ export default function App() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    if (renderQueued.current) return;
-    renderQueued.current = true;
+
     const overlayDefs = state.activeOverlays
       .map(id => OVERLAYS.find(o => o.id === id))
       .filter((o): o is NonNullable<typeof o> => !!o);
-    renderComposition(ctx, {
+
+    renderLoop.current.pending = {
       imageDataUrl: state.imageDataUrl,
       polygonPoints: state.polygonPoints,
       prismScale: state.prismScale,
       activeOverlays: overlayDefs,
       canvasWidth: CANVAS_W,
       canvasHeight: CANVAS_H,
-    }).finally(() => {
-      renderQueued.current = false;
-    });
+    };
+
+    if (renderLoop.current.running) return;
+
+    (async () => {
+      renderLoop.current.running = true;
+      while (renderLoop.current.pending) {
+        const params = renderLoop.current.pending;
+        renderLoop.current.pending = null;
+        await renderComposition(ctx, params);
+      }
+      renderLoop.current.running = false;
+    })();
   }, [state.imageDataUrl, state.polygonPoints, state.prismScale, state.activeOverlays]);
 
   const applyComplexity = useCallback((rawHull: Point[], complexity: number, jitter = 0) => {
