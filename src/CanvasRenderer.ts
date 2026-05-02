@@ -1,4 +1,4 @@
-import type { Point } from './types';
+import type { Point, OverlayDef } from './types';
 import { nonLinearScaleFromCentroid } from './geometry';
 import { generateNoiseCanvasAsync } from './filters';
 
@@ -6,6 +6,7 @@ export interface RenderParams {
   imageDataUrl: string | null;
   polygonPoints: Point[] | null; // normalized 0–1
   prismScale: number;
+  activeOverlays: OverlayDef[]; // ordered list of overlays to draw
   canvasWidth: number;
   canvasHeight: number;
 }
@@ -21,7 +22,10 @@ async function getNoiseCanvas(width: number, height: number): Promise<HTMLCanvas
   return cachedNoiseCanvas;
 }
 
-function loadImageElement(src: string): Promise<HTMLImageElement> {
+// Cache overlay images so they aren't re-fetched on every render
+const overlayImageCache = new Map<string, HTMLImageElement>();
+
+async function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -30,11 +34,22 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
+async function loadOverlayImage(path: string): Promise<HTMLImageElement | null> {
+  if (overlayImageCache.has(path)) return overlayImageCache.get(path)!;
+  try {
+    const img = await loadImageElement(path);
+    overlayImageCache.set(path, img);
+    return img;
+  } catch {
+    return null;
+  }
+}
+
 export async function renderComposition(
   ctx: CanvasRenderingContext2D,
   params: RenderParams
 ): Promise<void> {
-  const { imageDataUrl, polygonPoints, prismScale, canvasWidth, canvasHeight } = params;
+  const { imageDataUrl, polygonPoints, prismScale, activeOverlays, canvasWidth, canvasHeight } = params;
 
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.fillStyle = '#111111';
@@ -42,7 +57,7 @@ export async function renderComposition(
 
   if (!imageDataUrl) return;
 
-  // Layer 0: Draw photo (object-fit: cover)
+  // Layer 0: Photo (object-fit: cover)
   const img = await loadImageElement(imageDataUrl);
   const imgAspect = img.naturalWidth / img.naturalHeight;
   const canvasAspect = canvasWidth / canvasHeight;
@@ -55,8 +70,17 @@ export async function renderComposition(
     sh = img.naturalWidth / canvasAspect;
     sy = (img.naturalHeight - sh) / 2;
   }
-
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
+
+  // Layer 0.5: Overlays — above photo, below prism
+  for (const overlay of activeOverlays) {
+    const overlayImg = await loadOverlayImage(overlay.path);
+    if (!overlayImg) continue;
+    ctx.save();
+    ctx.globalCompositeOperation = overlay.blendMode;
+    ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
+    ctx.restore();
+  }
 
   if (!polygonPoints || polygonPoints.length < 3) return;
 
@@ -67,29 +91,21 @@ export async function renderComposition(
     y: p.y * canvasHeight,
   }));
 
-  // Save state
   ctx.save();
 
-  // Build polygon path
   ctx.beginPath();
   ctx.moveTo(pixelPoints[0].x, pixelPoints[0].y);
-  for (let i = 1; i < pixelPoints.length; i++) {
-    ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
-  }
+  for (let i = 1; i < pixelPoints.length; i++) ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
   ctx.closePath();
 
-  // Fill with #EEFF00 using difference blend
   ctx.globalCompositeOperation = 'difference';
   ctx.fillStyle = '#EEFF00';
   ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
 
-  // Apply noise texture clipped to polygon
   ctx.beginPath();
   ctx.moveTo(pixelPoints[0].x, pixelPoints[0].y);
-  for (let i = 1; i < pixelPoints.length; i++) {
-    ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
-  }
+  for (let i = 1; i < pixelPoints.length; i++) ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
   ctx.closePath();
   ctx.clip();
 
@@ -101,7 +117,7 @@ export async function renderComposition(
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
   } catch {
-    // Noise generation failed — render without texture
+    // render without noise
   }
 
   ctx.restore();

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import type { AppState } from './types';
+import { OVERLAYS } from './types';
 
 interface SidebarProps {
   state: AppState;
@@ -8,6 +9,7 @@ interface SidebarProps {
   onComplexityChange: (value: number) => void;
   onPrismScaleChange: (value: number) => void;
   onRegeneratePolygon: () => void;
+  onToggleOverlay: (id: string) => void;
   onExport: () => void;
 }
 
@@ -158,6 +160,7 @@ export function Sidebar({
   onComplexityChange,
   onPrismScaleChange,
   onRegeneratePolygon,
+  onToggleOverlay,
   onExport,
 }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -263,9 +266,51 @@ export function Sidebar({
         </ButtonEl>
       </div>
 
-      {/* § 02 — EXPORT */}
+      {/* § 02 — OVERLAYS */}
       <div style={s.section}>
-        <div style={s.sectionTitle}>§ 02 — Export</div>
+        <div style={s.sectionTitle}>§ 02 — Overlays</div>
+        {OVERLAYS.map(overlay => {
+          const isOn = state.activeOverlays.includes(overlay.id);
+          return (
+            <div
+              key={overlay.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px',
+              }}
+            >
+              <span style={{ ...s.value, opacity: isOn ? 1 : 0.45 }}>
+                {overlay.label}
+              </span>
+              <button
+                onClick={() => onToggleOverlay(overlay.id)}
+                style={{
+                  background: 'transparent',
+                  border: `0.5px solid ${isOn ? '#EEFF00' : '#333333'}`,
+                  color: isOn ? '#EEFF00' : '#555555',
+                  fontFamily: '"IBM Plex Mono", monospace',
+                  fontSize: '8px',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  padding: '3px 8px',
+                  cursor: 'pointer',
+                  borderRadius: 0,
+                  minWidth: '36px',
+                  textAlign: 'center',
+                }}
+              >
+                {isOn ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* § 03 — EXPORT */}
+      <div style={s.section}>
+        <div style={s.sectionTitle}>§ 03 — Export</div>
         <ButtonEl
           onClick={onExport}
           disabled={!hasImage}

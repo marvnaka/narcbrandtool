@@ -5,6 +5,7 @@ import { detectSilhouette } from './silhouette';
 import { simplifyPolygon } from './geometry';
 import { exportToPng } from './exportRenderer';
 import type { AppState, Point } from './types';
+import { OVERLAYS } from './types';
 
 const CANVAS_W = 1080;
 const CANVAS_H = 1350;
@@ -26,6 +27,7 @@ const initialState: AppState = {
   vertexCount: 0,
   polygonComplexity: 8,
   prismScale: 1.5,
+  activeOverlays: [],
 };
 
 export default function App() {
@@ -57,21 +59,24 @@ export default function App() {
     if (!ctx) return;
     if (renderQueued.current) return;
     renderQueued.current = true;
+    const overlayDefs = state.activeOverlays
+      .map(id => OVERLAYS.find(o => o.id === id))
+      .filter((o): o is NonNullable<typeof o> => !!o);
     renderComposition(ctx, {
       imageDataUrl: state.imageDataUrl,
       polygonPoints: state.polygonPoints,
       prismScale: state.prismScale,
+      activeOverlays: overlayDefs,
       canvasWidth: CANVAS_W,
       canvasHeight: CANVAS_H,
     }).finally(() => {
       renderQueued.current = false;
     });
-  }, [state.imageDataUrl, state.polygonPoints, state.prismScale]);
+  }, [state.imageDataUrl, state.polygonPoints, state.prismScale, state.activeOverlays]);
 
   const applyComplexity = useCallback((rawHull: Point[], complexity: number, jitter = 0) => {
     let epsilon = Math.max(0.001, complexityToEpsilon(complexity) + jitter);
     let simplified = simplifyPolygon(rawHull, epsilon);
-    // Hard cap at 8 vertices: increase epsilon 20% per iteration until satisfied
     while (simplified.length > 8) {
       epsilon *= 1.2;
       simplified = simplifyPolygon(rawHull, epsilon);
@@ -121,12 +126,7 @@ export default function App() {
     setState(prev => {
       if (!prev.rawHullPoints) return { ...prev, polygonComplexity: value };
       const simplified = applyComplexity(prev.rawHullPoints, value, 0);
-      return {
-        ...prev,
-        polygonComplexity: value,
-        polygonPoints: simplified,
-        vertexCount: simplified.length,
-      };
+      return { ...prev, polygonComplexity: value, polygonPoints: simplified, vertexCount: simplified.length };
     });
   }, [applyComplexity]);
 
@@ -143,15 +143,27 @@ export default function App() {
     setState(prev => ({ ...prev, prismScale: value }));
   }, []);
 
+  const handleToggleOverlay = useCallback((id: string) => {
+    setState(prev => {
+      const active = prev.activeOverlays.includes(id)
+        ? prev.activeOverlays.filter(o => o !== id)
+        : [...prev.activeOverlays, id];
+      return { ...prev, activeOverlays: active };
+    });
+  }, []);
+
   const handleExport = useCallback(async () => {
     if (!state.imageDataUrl) return;
+    const overlayDefs = state.activeOverlays
+      .map(id => OVERLAYS.find(o => o.id === id))
+      .filter((o): o is NonNullable<typeof o> => !!o);
     try {
-      await exportToPng(state.imageDataUrl, state.polygonPoints, state.prismScale);
+      await exportToPng(state.imageDataUrl, state.polygonPoints, state.prismScale, overlayDefs);
     } catch (err) {
       console.error('Export failed:', err);
       alert('Export failed: ' + (err instanceof Error ? err.message : 'Unknown error.'));
     }
-  }, [state.imageDataUrl, state.polygonPoints]);
+  }, [state.imageDataUrl, state.polygonPoints, state.prismScale, state.activeOverlays]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -173,6 +185,7 @@ export default function App() {
         onComplexityChange={handleComplexityChange}
         onPrismScaleChange={handlePrismScaleChange}
         onRegeneratePolygon={handleRegeneratePolygon}
+        onToggleOverlay={handleToggleOverlay}
         onExport={handleExport}
       />
 

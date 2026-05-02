@@ -1,4 +1,4 @@
-import type { Point } from './types';
+import type { Point, OverlayDef } from './types';
 import { nonLinearScaleFromCentroid } from './geometry';
 import { generateNoiseCanvasAsync } from './filters';
 
@@ -17,7 +17,8 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
 export async function exportToPng(
   imageDataUrl: string,
   polygonPoints: Point[] | null,
-  prismScale: number
+  prismScale: number,
+  activeOverlays: OverlayDef[]
 ): Promise<void> {
   const offscreen = document.createElement('canvas');
   offscreen.width = EXPORT_WIDTH;
@@ -40,9 +41,22 @@ export async function exportToPng(
     sh = img.naturalWidth / canvasAspect;
     sy = (img.naturalHeight - sh) / 2;
   }
-
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
 
+  // Layer 0.5: Overlays — above photo, below prism
+  for (const overlay of activeOverlays) {
+    try {
+      const overlayImg = await loadImageElement(overlay.path);
+      ctx.save();
+      ctx.globalCompositeOperation = overlay.blendMode;
+      ctx.drawImage(overlayImg, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+      ctx.restore();
+    } catch {
+      // overlay image missing, skip
+    }
+  }
+
+  // Layer 1: Prismatic polygon
   if (polygonPoints && polygonPoints.length >= 3) {
     const scaledPoints = nonLinearScaleFromCentroid(polygonPoints, prismScale);
     const pixelPoints = scaledPoints.map(p => ({
@@ -52,12 +66,9 @@ export async function exportToPng(
 
     ctx.save();
 
-    // Polygon fill with difference blend
     ctx.beginPath();
     ctx.moveTo(pixelPoints[0].x, pixelPoints[0].y);
-    for (let i = 1; i < pixelPoints.length; i++) {
-      ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
-    }
+    for (let i = 1; i < pixelPoints.length; i++) ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
     ctx.closePath();
 
     ctx.globalCompositeOperation = 'difference';
@@ -65,12 +76,9 @@ export async function exportToPng(
     ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Noise texture clipped to polygon
     ctx.beginPath();
     ctx.moveTo(pixelPoints[0].x, pixelPoints[0].y);
-    for (let i = 1; i < pixelPoints.length; i++) {
-      ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
-    }
+    for (let i = 1; i < pixelPoints.length; i++) ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
     ctx.closePath();
     ctx.clip();
 
@@ -88,7 +96,6 @@ export async function exportToPng(
     ctx.restore();
   }
 
-  // Trigger download
   const dataUrl = offscreen.toDataURL('image/png');
   const link = document.createElement('a');
   link.download = 'prismatic-poster.png';
