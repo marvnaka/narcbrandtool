@@ -12,9 +12,9 @@ const CANVAS_H = 1350;
 
 function complexityToEpsilon(complexity: number): number {
   // Hull coordinates are normalized 0–1, so epsilon must be in the same space.
-  //   complexity 6  → epsilon 0.08  (fewest vertices, most simplified)
+  //   complexity 7  → epsilon 0.08  (fewest vertices, most simplified)
   //   complexity 13 → epsilon 0.015 (most vertices, least simplified)
-  const t = (complexity - 6) / (13 - 6);
+  const t = (complexity - 7) / (13 - 7);
   return 0.08 - t * (0.08 - 0.015);
 }
 
@@ -162,9 +162,14 @@ export default function App() {
 
   const handleToggleOverlay = useCallback((id: string) => {
     setState(prev => {
-      const active = prev.activeOverlays.includes(id)
-        ? prev.activeOverlays.filter(o => o !== id)
-        : [...prev.activeOverlays, id];
+      const overlay = OVERLAYS.find(o => o.id === id);
+      if (!overlay) return prev;
+      if (prev.activeOverlays.includes(id)) {
+        return { ...prev, activeOverlays: prev.activeOverlays.filter(o => o !== id) };
+      }
+      // Radio: deactivate any other overlay in the same category, then activate this one
+      const sameCategory = OVERLAYS.filter(o => o.category === overlay.category).map(o => o.id);
+      const active = [...prev.activeOverlays.filter(o => !sameCategory.includes(o)), id];
       return { ...prev, activeOverlays: active };
     });
   }, []);

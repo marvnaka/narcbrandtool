@@ -228,7 +228,7 @@ export function Sidebar({
           <label style={s.label}>Polygon Complexity</label>
           <input
             type="range"
-            min={6}
+            min={7}
             max={13}
             step={1}
             value={state.polygonComplexity}
@@ -269,40 +269,50 @@ export function Sidebar({
       {/* § 02 — OVERLAYS */}
       <div style={s.section}>
         <div style={s.sectionTitle}>§ 02 — Overlays</div>
-        {OVERLAYS.map(overlay => {
-          const isOn = state.activeOverlays.includes(overlay.id);
+        {(['overlay', 'patch'] as const).map(category => {
+          const group = OVERLAYS.filter(o => o.category === category);
           return (
-            <div
-              key={overlay.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px',
-              }}
-            >
-              <span style={{ ...s.value, opacity: isOn ? 1 : 0.45 }}>
-                {overlay.label}
-              </span>
-              <button
-                onClick={() => onToggleOverlay(overlay.id)}
-                style={{
-                  background: 'transparent',
-                  border: `0.5px solid ${isOn ? '#EEFF00' : '#333333'}`,
-                  color: isOn ? '#EEFF00' : '#555555',
-                  fontFamily: '"IBM Plex Mono", monospace',
-                  fontSize: '8px',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  padding: '3px 8px',
-                  cursor: 'pointer',
-                  borderRadius: 0,
-                  minWidth: '36px',
-                  textAlign: 'center',
-                }}
-              >
-                {isOn ? 'ON' : 'OFF'}
-              </button>
+            <div key={category} style={{ marginBottom: '12px' }}>
+              <div style={{ ...s.label, marginBottom: '8px' }}>
+                {category === 'overlay' ? 'Overlay' : 'Patches'}
+              </div>
+              {group.map(overlay => {
+                const isOn = state.activeOverlays.includes(overlay.id);
+                return (
+                  <div
+                    key={overlay.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    <span style={{ ...s.value, opacity: isOn ? 1 : 0.45 }}>
+                      {overlay.label}
+                    </span>
+                    <button
+                      onClick={() => onToggleOverlay(overlay.id)}
+                      style={{
+                        background: 'transparent',
+                        border: `0.5px solid ${isOn ? '#EEFF00' : '#333333'}`,
+                        color: isOn ? '#EEFF00' : '#555555',
+                        fontFamily: '"IBM Plex Mono", monospace',
+                        fontSize: '8px',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        padding: '3px 8px',
+                        cursor: 'pointer',
+                        borderRadius: 0,
+                        minWidth: '36px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {isOn ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
