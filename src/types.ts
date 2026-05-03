@@ -10,6 +10,7 @@ export interface OverlayDef {
   label: string;
   blendMode: GlobalCompositeOperation;
   path: string;
+  category: 'overlay' | 'patch';
 }
 
 export interface AppState {
